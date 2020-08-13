@@ -121,11 +121,13 @@ curl --fail -o ${TGLISTYSF} -s http://www.pistar.uk/downloads/TGList_YSF.txt
 
 # Generate DMR ID file
 
-curl 'http://registry.dstar.su/dmr/DMRIds.php' 2>/dev/null | sed -e 's/[[:space:]]\+/ /g' > /tmp/DMRIds.dat 
+curl 'http://registry.dstar.su/dmr/DMRIds.php' 2>/dev/null | sed -e 's/[[:space:]]\+/ /g' > /tmp/DMRIds.dat
 
-if [ -s /tmp/DMRIds.dat ] then
+if [ -s /tmp/DMRIds.dat ]
+then
 	mv /tmp/DMRIds.dat ${DMRIDFILE}
-else rm -f /tmp/DMRIds.dat
+else
+	rm -f /tmp/DMRIds.dat
 fi
 
 # Generate DMR Hosts file
@@ -135,7 +137,7 @@ wget -O /tmp/data.json http://api.brandmeister.network/v1.0/groups/
 /usr/bin/python /usr/local/sbin/tg_generate.py
 
 mv /tmp/TGList.txt ${DMRHOSTS}
-rm /tmp/TGList.txt
+rm -f /tmp/TGList.txt
 
 # If there is a DMR Over-ride file, add it's contents to DMR_Hosts.txt
 if [ -f "/root/DMR_Hosts.txt" ]; then
