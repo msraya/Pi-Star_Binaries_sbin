@@ -22,6 +22,7 @@ DCSHOSTS=/usr/local/etc/DCS_Hosts.txt
 DExtraHOSTS=/usr/local/etc/DExtra_Hosts.txt
 DMRIDFILE=/usr/local/etc/DMRIds.dat
 DMRHOSTS=/usr/local/etc/DMR_Hosts.txt
+DMRNEWHOSTS=/usr/local/etc/DMRHosts.txt
 DPlusHOSTS=/usr/local/etc/DPlus_Hosts.txt
 P25HOSTS=/usr/local/etc/P25Hosts.txt
 YSFHOSTS=/usr/local/etc/YSFHosts.txt
@@ -50,6 +51,7 @@ if [ ${FILEBACKUP} -ne 0 ]; then
 	cp ${DExtraHOSTS} ${DExtraHOSTS}.$(date +%Y%m%d)
 	cp ${DMRIDFILE} ${DMRIDFILE}.$(date +%Y%m%d)
 	cp ${DMRHOSTS} ${DMRHOSTS}.$(date +%Y%m%d)
+	cp ${DMRNEWHOSTS} ${DMRNEWHOSTS}.$(date +%Y%m%d)	
 	cp ${DPlusHOSTS} ${DPlusHOSTS}.$(date +%Y%m%d)
 	cp ${P25HOSTS} ${P25HOSTS}.$(date +%Y%m%d)
 	cp ${YSFHOSTS} ${YSFHOSTS}.$(date +%Y%m%d)
@@ -69,6 +71,7 @@ ${DCSHOSTS}
 ${DExtraHOSTS}
 ${DMRIDFILE}
 ${DMRHOSTS}
+${DMRNEWHOSTS}
 ${DPlusHOSTS}
 ${P25HOSTS}
 ${YSFHOSTS}
@@ -96,7 +99,7 @@ done
 # Generate Host Files
 curl --fail -o ${APRSHOSTS} -s http://www.pistar.uk/downloads/APRS_Hosts.txt
 curl --fail -o ${DCSHOSTS} -s http://www.pistar.uk/downloads/DCS_Hosts.txt
-#curl --fail -o ${DMRHOSTS} -s http://www.pistar.uk/downloads/DMR_Hosts.txt
+curl --fail -o ${DMRHOSTS} -s http://www.pistar.uk/downloads/DMR_Hosts.txt
 if [ -f /etc/hostfiles.nodextra ]; then
   # Move XRFs to DPlus Protocol
   curl --fail -o ${DPlusHOSTS} -s http://www.pistar.uk/downloads/DPlus_WithXRF_Hosts.txt
@@ -136,7 +139,7 @@ wget -O /tmp/group.txt http://master.brandmeister.es/status/status.php
 wget -O /tmp/data.json http://api.brandmeister.network/v1.0/groups/
 /usr/bin/python /usr/local/sbin/tg_generate.py
 
-mv /tmp/TGList.txt ${DMRHOSTS}
+mv /tmp/TGList.txt ${DMRNEWHOSTS}
 rm -f /tmp/TGList.txt
 
 # If there is a DMR Over-ride file, add it's contents to DMR_Hosts.txt
