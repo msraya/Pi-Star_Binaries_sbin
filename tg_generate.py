@@ -1,3 +1,4 @@
+from unicodedata import normalize
 
 f=open('/tmp/group.txt')
 group=f.readlines()
@@ -19,25 +20,14 @@ f.close()
 content=[x.strip() for x in content]
 content = content[1:]
 content = content[:-1]
+content = [normalize('NFKD',x.decode('unicode-escape')).encode('ascii','ignore') for x in content]
 f = open("/tmp/TGList.txt","wb+")
 first_time = True
 j=0
 for line in content:
   j=j+1
   print "\rProcessing line" + str(j),  
-  #Solve unicode string replacement
   line=line.replace("\/"," ")
-  line=line.replace("\u00e9","e")
-  line=line.replace("\u00fa","u")
-  line=line.replace("\u00ed","i")
-  line=line.replace("\u00f4","o")
-  line=line.replace("\u00e4","a")
-  line=line.replace("\u00e1","a")
-  line=line.replace("\u00f3","o")
-  line=line.replace("\u00f6","o")
-  line=line.replace("\u00f1","n")
-  line=line.replace("\u2019"," ")
-  line=line.replace("\u00e8","e")
   line=line.replace("Provincial","")
   line=line.replace("Regional","Reg-") 
   #delete line feed
