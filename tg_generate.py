@@ -26,10 +26,10 @@ first_time = True
 j=0
 for line in content:
   j=j+1
-  print "\rProcessing line" + str(j),  
+  print "\rProcessing line" + str(j),
   line=line.replace("\/"," ")
   line=line.replace("Provincial","")
-  line=line.replace("Regional","Reg-") 
+  line=line.replace("Regional","Reg-")
   #delete line feed
   line=line.replace("\n","")
   line=line.replace("\r","")
@@ -41,7 +41,7 @@ for line in content:
   val=int(i)
   # Include Spanish Multimode TG
   if first_time and val>2140:
-    c=tg_count(2140) 
+    c=tg_count(2140)
     tmp="2140;0;" + str(c) + ";MULTIMODE SPAIN;MULTIMODE SPAIN"
     f.write(tmp+'\n')
     first_time = False
