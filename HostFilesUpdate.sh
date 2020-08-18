@@ -24,6 +24,7 @@ DMRIDFILE=/usr/local/etc/DMRIds.dat
 DMRHOSTS=/usr/local/etc/DMR_Hosts.txt
 DMRNEWHOSTS=/usr/local/etc/DMRHosts.txt
 DPlusHOSTS=/usr/local/etc/DPlus_Hosts.txt
+DMRPHOSTS=/usr/local/etc/DMRP_Talkgroups.txt
 P25HOSTS=/usr/local/etc/P25Hosts.txt
 YSFHOSTS=/usr/local/etc/YSFHosts.txt
 FCSHOSTS=/usr/local/etc/FCSHosts.txt
@@ -51,7 +52,7 @@ if [ ${FILEBACKUP} -ne 0 ]; then
 	cp ${DExtraHOSTS} ${DExtraHOSTS}.$(date +%Y%m%d)
 	cp ${DMRIDFILE} ${DMRIDFILE}.$(date +%Y%m%d)
 	cp ${DMRHOSTS} ${DMRHOSTS}.$(date +%Y%m%d)
-	cp ${DMRNEWHOSTS} ${DMRNEWHOSTS}.$(date +%Y%m%d)	
+	cp ${DMRNEWHOSTS} ${DMRNEWHOSTS}.$(date +%Y%m%d)
 	cp ${DPlusHOSTS} ${DPlusHOSTS}.$(date +%Y%m%d)
 	cp ${P25HOSTS} ${P25HOSTS}.$(date +%Y%m%d)
 	cp ${YSFHOSTS} ${YSFHOSTS}.$(date +%Y%m%d)
@@ -72,6 +73,7 @@ ${DExtraHOSTS}
 ${DMRIDFILE}
 ${DMRHOSTS}
 ${DMRNEWHOSTS}
+${DMRPHOSTS}
 ${DPlusHOSTS}
 ${P25HOSTS}
 ${YSFHOSTS}
@@ -121,7 +123,7 @@ curl --fail -o ${TGLISTBM} -s http://www.pistar.uk/downloads/TGList_BM.txt
 curl --fail -o ${TGLISTP25} -s http://www.pistar.uk/downloads/TGList_P25.txt
 curl --fail -o ${TGLISTNXDN} -s http://www.pistar.uk/downloads/TGList_NXDN.txt
 curl --fail -o ${TGLISTYSF} -s http://www.pistar.uk/downloads/TGList_YSF.txt
-
+curl --fail -o ${DMRPHOSTS} -s http://fcs004.xreflector.net/reflector.db
 # Generate DMR ID file
 
 curl 'http://registry.dstar.su/dmr/DMRIds.php' 2>/dev/null | sed -e 's/[[:space:]]\+/ /g' > /tmp/DMRIds.dat
@@ -140,6 +142,8 @@ wget -O /tmp/data.json http://api.brandmeister.network/v1.0/groups/
 /usr/bin/python /usr/local/sbin/tg_generate.py
 
 mv /tmp/TGList.txt ${DMRNEWHOSTS}
+rm -f /tmp/group.txt
+rm -f /tmp/data.json
 rm -f /tmp/TGList.txt
 
 # If there is a DMR Over-ride file, add it's contents to DMR_Hosts.txt
