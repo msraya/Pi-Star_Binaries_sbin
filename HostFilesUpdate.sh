@@ -126,14 +126,7 @@ curl --fail -o ${TGLISTYSF} -s http://www.pistar.uk/downloads/TGList_YSF.txt
 curl --fail -o ${DMRPHOSTS} -s http://fcs004.xreflector.net/reflector.db
 # Generate DMR ID file
 
-curl 'http://registry.dstar.su/dmr/DMRIds.php' 2>/dev/null | sed -e 's/[[:space:]]\+/ /g' > /tmp/DMRIds.dat
-
-if [ -s /tmp/DMRIds.dat ]
-then
-	mv /tmp/DMRIds.dat ${DMRIDFILE}
-else
-	rm -f /tmp/DMRIds.dat
-fi
+curl --fail -o ${DMRIDFILE} -s http://ham-digital.org/status/DMRIds.dat
 
 # Generate DMR Hosts file
 
