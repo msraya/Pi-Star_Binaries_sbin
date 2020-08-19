@@ -126,7 +126,7 @@ curl --fail -o ${TGLISTYSF} -s http://www.pistar.uk/downloads/TGList_YSF.txt
 curl --fail -o ${DMRPHOSTS} -s http://fcs004.xreflector.net/reflector.db
 # Generate DMR ID file
 
-curl --fail -o ${DMRIDFILE} -s http://ham-digital.org/status/DMRIds.dat
+curl --fail -o ${DMRIDFILE} -s https://ham-digital.org/status/DMRIds.dat
 
 # Generate DMR Hosts file
 
