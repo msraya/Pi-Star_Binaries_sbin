@@ -5,6 +5,7 @@
 
 # Shrink NginX error log to stop it getting out of hand
 echo "$(tail -500 /var/log/nginx/error.log)" > /var/log/nginx/error.log
+mount -o remount,rw /
 
 # Shrink the MMDVMHost Log
 #MMDVMLogFiles=$(ls /var/log/pi-star/MMDVM-*.log 2> /dev/null | wc -l)
@@ -28,6 +29,10 @@ echo "$(tail -500 /var/log/nginx/error.log)" > /var/log/nginx/error.log
 journalctl --rotate
 journalctl --vacuum-time=24h
 journalctl --vacuum-size=5M
+
+# Backup the WiresX News Data
+cp -R /tmp/news /home/pi-star
+chown -R pi-star.pi-star /home/pi-star/news/*
 
 # Mount the disk RO
 mount -o remount,ro /

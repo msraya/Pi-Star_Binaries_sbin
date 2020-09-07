@@ -221,4 +221,11 @@ if [ -d "/usr/local/etc/ircddbgateway" ]; then
 	fi
 fi
 
+if ! grep -q "/home/pi-star/news" /etc/rc.local; then
+   echo "Adding WiresX News load at start"
+   sudo mkdir /tmp/news
+   sudo cp /var/www/dashboard/news.php /tmp/news/index.php
+   sudo sed -i "/remount,ro/ i cp -R /home/pi-star/news /tmp\ncp /var/www/dashboard/news.php /tmp/news/index.php\nchown -R mmdvm.mmdvm /tmp/news/*" /etc/rc.local
+fi
+
 exit 0
