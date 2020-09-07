@@ -227,7 +227,7 @@ if ! grep -q "/home/pi-star/news" /etc/rc.local; then
    sudo cp /var/www/dashboard/news.php /tmp/news/index.php
    sudo mkdir /home/pi-star/news
    sudo cp /var/www/dashboard/news.php /home/pi-star/news/index.php
-   sudo sed -i "/remount,ro/ i cp -R /home/pi-star/news /tmp\ncp /var/www/dashboard/news.php /tmp/news/index.php\nchown -R mmdvm.mmdvm /tmp/news/*" /etc/rc.local
+   sudo sed -i "/remount,ro/ i cp -R /home/pi-star/news /tmp\ncp /var/www/dashboard/news.php /tmp/news/index.php\nchown -R mmdvm.mmdvm /tmp/news" /etc/rc.local
 fi
 
 exit 0
