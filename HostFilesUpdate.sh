@@ -123,7 +123,7 @@ curl --fail -o ${TGLISTBM} -s http://www.pistar.uk/downloads/TGList_BM.txt
 curl --fail -o ${TGLISTP25} -s http://www.pistar.uk/downloads/TGList_P25.txt
 curl --fail -o ${TGLISTNXDN} -s http://www.pistar.uk/downloads/TGList_NXDN.txt
 curl --fail -o ${TGLISTYSF} -s http://www.pistar.uk/downloads/TGList_YSF.txt
-curl --fail -o ${DMRPHOSTS} -s http://fcs004.xreflector.net/reflector.db
+curl --fail -o ${DMRPHOSTS} -s https://fcs004.xreflector.net/reflector.db
 # Generate DMR ID file
 
 curl --fail -o ${DMRIDFILE} -s https://ham-digital.org/status/DMRIds.dat
