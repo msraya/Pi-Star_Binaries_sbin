@@ -21,30 +21,9 @@ if ! flock -n 200 ; then
   exit 1
 fi
 
-function upgradeTo410RMB()
+function upgradeTo413()
 {
-    # MobileGPS Service
-    echo '[Unit]' > /lib/systemd/system/mobilegps.service
-    echo 'Description=Pi-Star MobileGPS Service' >> /lib/systemd/system/mobilegps.service
-    echo 'After=syslog.target network.target' >> /lib/systemd/system/mobilegps.service
-    echo 'Before=mmdvmhost.timer' >> /lib/systemd/system/mobilegps.service
-    echo '' >> /lib/systemd/system/mobilegps.service
-    echo '[Service]' >> /lib/systemd/system/mobilegps.service
-    echo 'Type=forking' >> /lib/systemd/system/mobilegps.service
-    echo 'ExecStart=/usr/local/sbin/mobilegps.service start' >> /lib/systemd/system/mobilegps.service
-    echo 'ExecStop=/usr/local/sbin/mobilegps.service stop' >> /lib/systemd/system/mobilegps.service
-    echo 'ExecReload=/usr/local/sbin/mobilegps.service restart' >> /lib/systemd/system/mobilegps.service
-    echo '' >> /lib/systemd/system/mobilegps.service
-    echo '[Install]' >> /lib/systemd/system/mobilegps.service
-    echo 'WantedBy=multi-user.target' >> /lib/systemd/system/mobilegps.service
-    
-    # MobileGPS Timer
-    echo '[Timer]' > /lib/systemd/system/mobilegps.timer
-    echo 'OnStartupSec=20' >> /lib/systemd/system/mobilegps.timer
-    echo '' >> /lib/systemd/system/mobilegps.timer
-    echo '[Install]' >> /lib/systemd/system/mobilegps.timer
-    echo 'WantedBy=multi-user.target' >> /lib/systemd/system/mobilegps.timer
-    
+   
     # Disable SAMBA
     systemctl stop smbd
     systemctl stop nmbd
@@ -56,6 +35,19 @@ function upgradeTo410RMB()
     # Disable agetty on tty1
     systemctl stop getty@tty1.service
     systemctl disable getty@tty1.service
+	
+    # Disable unattended-upgrades, no background python process please,
+    # this is a RPi (zero possibly).
+    # Now, it's triggered by the pistar daily cron job (waaayyyyy enough)
+    systemctl stop unattended-upgrades
+    LC_ALL=C systemctl disable unattended-upgrades > /dev/null 2<&1
+    systemctl mask unattended-upgrades
+
+    # Randomise Daily Cron on boot
+    sed -i '/^\/usr\/local\/sbin\/pistar-motdgen/a \\n# Shuffle the time for the daily crontab jobs' /etc/rc.local
+    sed -i '/^# Shuffle the time for the daily crontab jobs/a cronMins=$(shuf -i 0-59 -n 1)' /etc/rc.local
+    sed -i '/^cronMins=*/a cronHours=$(shuf -i 3-4 -n1)' /etc/rc.local
+    sed -i '/^cronHours=*/a mount -o remount,rw \/\nsed -i "/cron.daily/c ${cronMins} ${cronHours}\t* * *\troot\tmount -o remount,rw / && cd / && run-parts --report /etc/cron.daily" /etc/crontab' /etc/rc.local
     
     # Tweaking avahi
     sed -i 's/^publish-hinfo=.*/publish-hinfo=yes/g;s/^publish-workstation=.*/publish-workstation=yes/g' /etc/avahi/avahi-daemon.conf
@@ -85,91 +77,9 @@ EOF
 </service-group>
 EOF
 
-    systemctl restart avahi-daemon
-    
+    systemctl restart avahi-daemon 
     systemctl daemon-reload
-    systemctl enable mobilegps.timer
-}
-
-function upgradeTo411RMB()
-{
-    # Disable unattended-upgrades, no background python process please,
-    # this is a RPi (zero possibly).
-    # Now, it's triggered by the pistar daily cron job (waaayyyyy enough)
-    systemctl stop unattended-upgrades
-    LC_ALL=C systemctl disable unattended-upgrades > /dev/null 2<&1
-    systemctl mask unattended-upgrades
-}
-
-function upgradeTo412RMB()
-{
-    systemctl stop mobilegps.service
-    systemctl disable mobilegps.service
-    
-    # Disable unattended-upgrades, no background python process please,
-    # this is a RPi (zero possibly).
-    # Now, it's triggered by the pistar daily cron job (waaayyyyy enough)
-    systemctl stop unattended-upgrades
-    LC_ALL=C systemctl disable unattended-upgrades > /dev/null 2<&1
-    systemctl mask unattended-upgrades
-    
-    systemctl daemon-reload
-    systemctl enable mobilegps.service
-}
-
-function upgradeTo413RMB()
-{
-    # Enable localhost-only for shellinabox (along with nginx proxy)
-    echo "    location ^~ /shell/ {" > /etc/nginx/default.d/shellinabox.conf
-    echo "         proxy_pass http://127.0.0.1:2222;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "         proxy_redirect default;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "         proxy_set_header Host \$host;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "         proxy_set_header X-Real-IP \$remote_addr;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "         proxy_buffering off;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "         tcp_nodelay on;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "         access_log off;" >> /etc/nginx/default.d/shellinabox.conf
-    echo "    }" >> /etc/nginx/default.d/shellinabox.conf
-
-    grep -q 'SHELLINABOX_ARGS' /etc/default/shellinabox && (grep -q '^SHELLINABOX_ARGS=.*localhost\-only' /etc/default/shellinabox || (sed -i 's/^SHELLINABOX_ARGS\=\"--no-beep/SHELLINABOX_ARGS\=\"--no-beep --localhost-only/g' /etc/default/shellinabox))
-
-    # Change default font
-    grep -q 'font-family' /etc/shellinabox/options-available/00_White\ On\ Black.css || (echo -e '#vt100 #console, #vt100 #alt_console, #vt100 #cursor, #vt100 #lineheight {\n  font-family: monospace;\n  font-size: 12pt;\n}\n' >> /etc/shellinabox/options-available/00_White\ On\ Black.css)
-    
-    systemctl reload nginx.service
-
-    # Add pistar-service bash completion
-    DEST="/usr/share/bash-completion/completions/pistar-services"
-    echo "#!/bin/bash" > $DEST
-    echo "" >> $DEST
-    echo "_pistar_services()" >> $DEST
-    echo "{" >> $DEST
-    echo "    local cur prev words cword" >> $DEST
-    echo "    _init_completion -n = || return" >> $DEST
-    echo "" >> $DEST
-    echo "    _expand || return 0" >> $DEST
-    echo "" >> $DEST
-    echo "    COMPREPLY=( \$( compgen -W 'start stop restart fullstop status' -- \"\$cur\" ) )" >> $DEST
-    echo "" >> $DEST
-    echo "} &&" >> $DEST
-    echo "complete -F _pistar_services pistar-services" >> $DEST
-    echo "" >> $DEST
-    chown root:root $DEST
-    chmod 0644 $DEST
-
-    # Remove obsolete MobileGPS service
-    systemctl stop mobilegps.timer
-    systemctl stop mobilegps.service
-    systemctl disable mobilegps.timer
-    systemctl disable mobilegps.service
-    rm -f /lib/systemd/system/mobilegps.timer
-    rm -f /lib/systemd/system/mobilegps.service
-
-    systemctl daemon-reload
-    
-    # Install GPSd
-    apt-get install -y libgps-dev gpsd
-
+	
     echo "WARNING: please update your Pi-Star using the Web interface or execute 'sudo pistar-update' NOW, then reboot."
 }
 
@@ -944,6 +854,9 @@ EOF
 			# Re-create the MOTD
 			/usr/local/sbin/pistar-motdgen
 
+			## Force system update (required in 3.4.x)
+			apt-get update && apt-get dist-upgrade -y
+			
 			Message="Upgraded from ${pistarCurVersion} to 3.4.22..."
 		else
 			Message="In-place upgrades from 3.4.4 are not supported..."
@@ -995,7 +908,6 @@ EOF
 
 		    # Re-create the MOTD
 		    /usr/local/sbin/pistar-motdgen
-
 		    
 		    # Disable the Load/Save RFKill status - it complains on every boot.
 		    systemctl mask systemd-rfkill.service
@@ -1193,6 +1105,48 @@ EOF
 		fi
 	;;
 	3.4.27-RMB)
+		if [ ! -z "${pistarHardware}" ]; then
+		    sed -i 's/3.4.27-RMB/3.4.28-RMB/g' /etc/pistar-release
+
+		    # Re-create the MOTD
+		    /usr/local/sbin/pistar-motdgen
+
+		    upgradeTo415RMB
+		    
+		    Message="Upgraded from ${pistarCurVersion} to 3.4.28-RMB..."
+		else
+		    Message="In-place upgrades from 3.4.4 are not supported..."
+		fi
+	;;
+	3.4.28-RMB)
+		if [ ! -z "${pistarHardware}" ]; then
+		    sed -i 's/3.4.28-RMB/3.4.29-RMB/g' /etc/pistar-release
+
+		    # Re-create the MOTD
+		    /usr/local/sbin/pistar-motdgen
+
+		    upgradeTo416RMB
+		    
+		    Message="Upgraded from ${pistarCurVersion} to 3.4.29-RMB..."
+		else
+		    Message="In-place upgrades from 3.4.4 are not supported..."
+		fi
+	;;
+	3.4.29-RMB)
+		if [ ! -z "${pistarHardware}" ]; then
+		    sed -i 's/3.4.29-RMB/3.4.30-RMB/g' /etc/pistar-release
+
+		    # Re-create the MOTD
+		    /usr/local/sbin/pistar-motdgen
+
+		    upgradeTo417RMB
+		    
+		    Message="Upgraded from ${pistarCurVersion} to 3.4.30-RMB..."
+		else
+		    Message="In-place upgrades from 3.4.4 are not supported..."
+		fi
+	;;
+	3.4.30-RMB)
 		Message="You are already running the latest version..."
 	;;
 	4.0.0-Beta)
@@ -1866,117 +1820,18 @@ EOF
 		Message="Upgraded from ${pistarCurVersion} to 4.1.2-RMB..."
 	;;
 	4.1.2)
-		sed -i 's/4.1.2$/4.1.2-RMB/g' /etc/pistar-release
+		sed -i 's/4.1.2$/4.1.3/g' /etc/pistar-release
 
-		upgradeTo410RMB
-		upgradeTo411RMB
-		upgradeTo412RMB
+		upgradeTo413
 		
 		# Re-create the MOTD
 		/usr/local/sbin/pistar-motdgen
 
 		# OK we are done
-		Message="Upgraded from ${pistarCurVersion} to 4.1.2-RMB..."
-	;;
-	4.1.2-RMB)
-		sed -i 's/4.1.2-RMB/4.1.3-RMB/g' /etc/pistar-release
-
-		# Setup systemd unit files for Nextion Driver
-		echo '[Unit]' > /lib/systemd/system/nextiondriver.service
-		echo 'Description=NextionDriver service' >> /lib/systemd/system/nextiondriver.service
-		echo 'DefaultDependencies=no' >> /lib/systemd/system/nextiondriver.service
-		echo 'After=local-fs.target wifi-country.service network-online.target' >> /lib/systemd/system/nextiondriver.service
-		echo 'Before=timers.target' >> /lib/systemd/system/nextiondriver.service
-		echo '' >> /lib/systemd/system/nextiondriver.service
-		echo '[Service]' >> /lib/systemd/system/nextiondriver.service
-		echo 'User=root' >> /lib/systemd/system/nextiondriver.service
-		echo 'Type=forking' >> /lib/systemd/system/nextiondriver.service
-		echo 'WorkingDirectory=/usr/local/etc/' >> /lib/systemd/system/nextiondriver.service
-		echo 'ExecStart=/usr/local/bin/NextionDriver -c /etc/mmdvmhost -i' >> /lib/systemd/system/nextiondriver.service
-		echo 'ExecStop=/usr/bin/killall NextionDriver' >> /lib/systemd/system/nextiondriver.service
-		echo '' >> /lib/systemd/system/nextiondriver.service
-		echo '[Install]' >> /lib/systemd/system/nextiondriver.service
-		echo 'WantedBy=multi-user.target' >> /lib/systemd/system/nextiondriver.service
-		echo 'WantedBy=network-online.target' >> /lib/systemd/system/nextiondriver.service
-		echo 'RequiredBy=mmdvmhost.service' >> /lib/systemd/system/nextiondriver.service
-
-		echo '[Unit]' > /lib/systemd/system/mmdvmhost.service
-		echo 'Description=MMDVMHost Radio Service' >> /lib/systemd/system/mmdvmhost.service
-		echo 'After=syslog.target network.target' >> /lib/systemd/system/mmdvmhost.service
-		echo 'Requires=nextiondriver.service' >> /lib/systemd/system/mmdvmhost.service
-		echo '' >> /lib/systemd/system/mmdvmhost.service
-		echo '[Service]' >> /lib/systemd/system/mmdvmhost.service
-		echo 'Type=forking' >> /lib/systemd/system/mmdvmhost.service
-		echo 'ExecStart=/usr/local/sbin/mmdvmhost.service start' >> /lib/systemd/system/mmdvmhost.service
-		echo 'ExecStop=/usr/local/sbin/mmdvmhost.service stop' >> /lib/systemd/system/mmdvmhost.service
-		echo 'ExecReload=/usr/local/sbin/mmdvmhost.service restart' >> /lib/systemd/system/mmdvmhost.service
-		echo '' >> /lib/systemd/system/mmdvmhost.service
-		echo '[Install]' >> /lib/systemd/system/mmdvmhost.service
-		echo 'WantedBy=multi-user.target' >> /lib/systemd/system/mmdvmhost.service
-
-		# Enable the service
-		systemctl daemon-reload
-		systemctl stop nextiondriver.service
-		/usr/bin/killall NextionDriver
-		systemctl enable nextiondriver.service
-		systemctl restart nextiondriver.service
-		systemctl restart mmdvmhost.service
-
-		upgradeTo413RMB
-
-		# Re-create the MOTD
-		/usr/local/sbin/pistar-motdgen
-
-		Message="Upgraded from ${pistarCurVersion} to 4.1.3-RMB..."
+		Message="Upgraded from ${pistarCurVersion} to 4.1.3..."
 	;;
 	4.1.3)
-		#sed -i 's/4.1.3$/4.1.3-RMB/g' /etc/pistar-release
-	    
-		#upgradeTo410RMB
-		#upgradeTo411RMB
-		#upgradeTo412RMB
-		#upgradeTo413RMB
-	    
-		# Re-create the MOTD
-		#/usr/local/sbin/pistar-motdgen
-
-		# OK we are done
-		#Message="Upgraded from ${pistarCurVersion} to 4.1.3-RMB..."
-		Message="You are already running the latest version..."
-	;;
-	4.1.3-RMB)
-		sed -i 's/4.1.3-RMB/4.1.4-RMB/g' /etc/pistar-release
-
-		systemctl stop nextiondriver.service
-		/usr/bin/killall NextionDriver
-		systemctl disable nextiondriver.service
-		systemctl mask nextiondriver.service
-
-		rm -f /lib/systemd/system/nextiondriver.service
-
-		echo '[Unit]' > /lib/systemd/system/mmdvmhost.service
-		echo 'Description=MMDVMHost Radio Service' >> /lib/systemd/system/mmdvmhost.service
-		echo 'After=syslog.target network.target' >> /lib/systemd/system/mmdvmhost.service
-		echo '' >> /lib/systemd/system/mmdvmhost.service
-		echo '[Service]' >> /lib/systemd/system/mmdvmhost.service
-		echo 'Type=forking' >> /lib/systemd/system/mmdvmhost.service
-		echo 'ExecStart=/usr/local/sbin/mmdvmhost.service start' >> /lib/systemd/system/mmdvmhost.service
-		echo 'ExecStop=/usr/local/sbin/mmdvmhost.service stop' >> /lib/systemd/system/mmdvmhost.service
-		echo 'ExecReload=/usr/local/sbin/mmdvmhost.service restart' >> /lib/systemd/system/mmdvmhost.service
-		echo '' >> /lib/systemd/system/mmdvmhost.service
-		echo '[Install]' >> /lib/systemd/system/mmdvmhost.service
-		echo 'WantedBy=multi-user.target' >> /lib/systemd/system/mmdvmhost.service
-		
-		systemctl daemon-reload
-		systemctl restart mmdvmhost.service
-		
- 		# Re-create the MOTD
-		/usr/local/sbin/pistar-motdgen
-		
-		Message="Upgraded from ${pistarCurVersion} to 4.1.4-RMB..."
-	;;
-	4.1.4-RMB)
-		Message="You are already running the latest version..."
+		Message="You are already running the latest version..."	
 	;;
 	*)
 		Message="Something went very wrong, I cant tell what version I am running"
