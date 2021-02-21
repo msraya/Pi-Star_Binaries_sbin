@@ -47,6 +47,9 @@ for line in content:
     c=tg_count(21480)
     tmp="21480;0;" + str(c) + ";SPAIN INFORMATION BEACON;INFORMATION BEACON"
     f.write(tmp+'\n')
+    c=tg_count(214001)
+    tmp="214001;0;" + str(c) + ";ANDALUCIA;ANDALUCIA"
+    f.write(tmp+'\n')
     first_time = False
   #process special TG
   if (val>=4000) and (val<=5000):
